@@ -1,0 +1,55 @@
+version: '3.3'
+  
+services:
+    database:
+        image: mysql:8.2.0
+        restart: always
+        container_name: database
+        environment:
+            MYSQL_USER: ${DB_USER}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_DATABASE: ${DB_DATABASE_NAME}
+            MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+        ports:
+            - ${DB_EXTERNAL_PORT}:${DB_CONTAINER_PORT}
+        expose:
+            - ${DB_CONTAINER_PORT}
+        volumes:
+            - db-volume:/var/run/mysqld
+            - ./init.sql:/data/application/init.sql
+        command: --init-file /data/application/init.sql
+    api:
+        build:
+            context: ./api/
+            dockerfile: Dockerfile
+        restart: always
+        container_name: api 
+        volumes: 
+            - ./api:/app
+            - db-volume:/var/run/mysqld
+        environment:
+            DB_HOST: ${DB_HOST}
+            DB_PORT: ${DB_CONTAINER_PORT}
+            DB_NAME: ${DB_DATABASE_NAME}
+            DB_USER: ${DB_USER}
+            DB_PASSWORD: ${DB_PASSWORD}
+            DB_DRIVER: ${DB_DRIVER}
+            SECRET_KEY: ${DB_SECRET_KEY}
+        expose:
+            - ${API_EXPOSE_PORT}
+        ports:
+            - ${API_EXTERNAL_PORT}:${API_EXPOSE_PORT}
+        command: flask run --reload --host=0.0.0.0
+        networks:
+            backend:
+                aliases:
+                    - database
+        depends_on:
+            - database
+
+networks:
+    backend:
+        external: true
+
+volumes:
+    db-volume: {}
