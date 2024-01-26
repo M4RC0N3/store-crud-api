@@ -10,7 +10,7 @@ db = SQLAlchemy()
 
 import models
 
-from routes import product_routes
+from routes import product_routes, purchases_routes
 
 def create_app(debug=True):
     app = APIFlask(__name__)
@@ -39,6 +39,7 @@ def create_app(debug=True):
         db.create_all()
 
     app.register_blueprint(product_routes)
+    app.register_blueprint(purchases_routes)
     
     return app
 
