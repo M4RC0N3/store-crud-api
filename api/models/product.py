@@ -7,4 +7,3 @@ class Product(db.Model):
     name  = db.Column(db.String(10), nullable=False)
     price = db.Column(db.Integer(), nullable=False, default=0)
     quantity = db.Column(db.Integer(), nullable=False, default=0)
-    #purchases_relation = db.relationship("Purchases", backref='product')
