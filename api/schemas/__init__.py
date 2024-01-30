@@ -1,3 +1,4 @@
 from schemas.product import ProductSchema
 from schemas.purchases import PurchasesSchema
-from schemas.user import UserSchema
+from schemas.user import UserSchema, UsersSchema
+from schemas.wallet import WalletSchema
