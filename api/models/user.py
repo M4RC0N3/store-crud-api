@@ -5,6 +5,5 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=True)
     name = db.Column(db.String(256), nullable=False)
     purchases_relation = db.relationship("Purchases", backref="user", lazy='dynamic')
-    wallet_id = db.Column(db.Integer, db.ForeignKey('wallet.id'), nullable=False)
-    wallet_relation = db.relationship("Wallet", backref="user")
+    wallet_id = db.Column(db.Integer, db.ForeignKey('wallet.id'))
     

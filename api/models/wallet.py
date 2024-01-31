@@ -5,3 +5,4 @@ from app import db
 class Wallet(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     cash = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))

@@ -1,11 +1,13 @@
-from apiflask import APIBlueprint
+from apiflask import APIBlueprint, abort
 from flask import request, Response
+from sqlalchemy import select
+from sqlalchemy.exc import NoResultFound
 import json
 import logging
 
 from app import db
-from models import Purchases
-from schemas import PurchasesSchema, ProductSchema
+from models import Purchases, User, Wallet, Product
+from schemas import PurchasesSchema, ProductSchema, UsersSchema, WalletSchema
 
 purchases_routes = APIBlueprint("purchases", __name__)
 
@@ -21,16 +23,40 @@ def get_purchase():
 @purchases_routes.output(PurchasesSchema)
 def purchase_new(json_data):
     body = request.get_json()
-    
-    new_purchases = Purchases(user_id=body["user_id"], product_id=body["product_id"])
+    cash = 0
+    product_price = 0
 
-    db.session.add(new_purchases)
-
+    wallet_query = select(Wallet).filter_by(user_id=body["user_id"])
     try:
-        db.session.commit()
-        return Response(json.dumps(PurchasesSchema().dump(new_purchases)), status=201, content_type="application/json")
-    except Exception as e:
-        db.session.rollback()
-        return Response(json.dumps({"erros": str(e)}), status=400, content_type="application/json")
-    finally:
-        db.session.close()
+        wallet = db.session.execute(wallet_query).scalar_one()
+        cash = wallet.cash
+    except NoResultFound:
+        return abort(404, "Usuário compatível com carteira não foi encontrado")
+
+    product_query = select(Product).filter_by(id=body["product_id"])
+    try:
+        product = db.session.execute(product_query).scalar_one()
+        product_price = product.price
+
+    except NoResultFound:
+        return abort(404, "Produto não encontrado")
+
+    if can_buy(cash, product_price):
+        wallet_discount = cash - product_price
+
+        try:
+            wallet.cash = wallet_discount
+            db.session.commit()
+        except Exception as e:
+            db.rollback()
+            return abort(400, str(e))
+        finally:
+            db.session.close()
+    else:
+        return abort(404, "Cliente não tem saldo suficiente para comprar o produto")
+
+def can_buy(wallet_cash, product_price):
+    if wallet_cash >= product_price:
+        return True
+    else:
+       return False
