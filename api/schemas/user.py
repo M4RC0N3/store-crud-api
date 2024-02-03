@@ -12,3 +12,7 @@ class UsersSchema(Schema):
     id = fields.Integer()
     name = fields.String()
     wallet_relation = fields.Nested(WalletSchema(only=('id', 'cash')))
+
+class OnlyUserDataSchema(Schema):
+    id = fields.Integer()
+    name = fields.String()

@@ -31,7 +31,7 @@ def purchase_new(json_data):
         wallet = db.session.execute(wallet_query).scalar_one()
         cash = wallet.cash
     except NoResultFound:
-        return abort(404, "Usuário compatível com carteira não foi encontrado")
+        return abort(404, "Wallet compatible user not found")
 
     product_query = select(Product).filter_by(id=body["product_id"])
     try:
@@ -39,7 +39,7 @@ def purchase_new(json_data):
         product_price = product.price
 
     except NoResultFound:
-        return abort(404, "Produto não encontrado")
+        return abort(404, "Product not found")
 
     if can_buy(cash, product_price):
         wallet_discount = cash - product_price
@@ -53,7 +53,7 @@ def purchase_new(json_data):
         finally:
             db.session.close()
     else:
-        return abort(404, "Cliente não tem saldo suficiente para comprar o produto")
+        return abort(404, "The customer does not have enough balance to purchase the product")
 
 def can_buy(wallet_cash, product_price):
     if wallet_cash >= product_price:

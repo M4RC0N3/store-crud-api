@@ -1,11 +1,13 @@
-from apiflask import APIBlueprint
+from apiflask import APIBlueprint, abort
 from flask import request, Response
+from sqlalchemy.exc import NoResultFound
+from sqlalchemy import select
 import json
 import logging
 
 from app import db
 from models import User, Purchases
-from schemas import UserSchema, UsersSchema
+from schemas import UserSchema, UsersSchema, OnlyUserDataSchema
 
 user_routes = APIBlueprint("user", __name__)
 
@@ -18,10 +20,12 @@ def user_list():
     return Response(json.dumps(response_data), status=200, content_type="application/json")
 
 @user_routes.get("/user-view/<user_id>")
-@user_routes.output(UserSchema)
+@user_routes.output(OnlyUserDataSchema)
 def user_view(user_id):
-    user = User.query.get(user_id)
-    if user:
-        user_schema = UserSchema()
-        result = user_schema.dump(user)
-        return result
+    try:
+        user = db.session.query(User).filter_by(id=user_id).one()
+        response_data = {"User": OnlyUserDataSchema().dump(user)}
+        return Response(json.dumps(response_data), status=200, content_type="application/json")
+
+    except NoResultFound:
+        return abort (404, "user not found")

@@ -1,5 +1,7 @@
 from apiflask import APIBlueprint
 from flask import request, Response
+from sqlalchemy import select
+from sqlalchemy.exc import NoResultFound
 import json
 import logging
 
@@ -41,10 +43,9 @@ def create_product(json_data):
 @product_routes.input(ProductSchema)
 @product_routes.output(ProductSchema)
 def update_product(json_data):
+   product_query = select(Product).filter_by(id=json_data.get("id"))
+   product = db.session.execute(product_query).scalar_one()
    try:
-      product = Product.query.get(json_data.get("id"))
-      if not (product):
-         return Response(json.dumps({"error": "Produto não encontrado"}), status=404, content_type="application/json")
 
       if "name" in json_data:
          product.name = json_data["name"]
@@ -54,15 +55,16 @@ def update_product(json_data):
          product.quantity = json_data["quantity"]
 
       db.session.commit()
+
       response_data = {
-         "message": "Produto editado com sucesso",
+         "message": "Product edits successfully",
          "product": ProductSchema().dump(product)
       }
       return Response(json.dumps(response_data), status=200, content_type="application/json")
 
-   except Exception as e:
+   except NoResultFound:
       db.session.rollback()
-      return Response({"error": str(e)}, status=400, content_type="application/json")
+      return abort(404, "Product not found")
 
    finally:
       db.session.close()
@@ -71,16 +73,13 @@ def update_product(json_data):
 @product_routes.input(ProductSchema)
 @product_routes.output(ProductSchema)
 def delete_product(json_data):
+   product_query = select(Product).filter_by(id=json_data.get("id"))
+   product = db.session.execute(product_query).scalar_one()
    try:
-      product = Product.query.get(json_data.get("id"))
-      logging.info(product)
-      if not (product):
-         Response(json.dumps({"error": "Produto não encontrado"}), status=404, content_type="application/json")
-
       db.session.delete(product)
       db.session.commit()
 
-      return Response(json.dumps({"message": "Produto excluído com sucesso"}), status=200, content_type="application/json")
+      return Response(json.dumps({"message": "Product deleted successfully"}), status=200, content_type="application/json")
 
    except Exception as e:
       db.session.rollback()
